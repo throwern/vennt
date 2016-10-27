@@ -1,0 +1,51 @@
+<div class='vennt'>    
+  <div class='options-menu'>
+    <div class='dge-list options'>
+      <h2>Statistical Tests</h2>
+      <ul id='files' class='list-unstyled'></ul>
+    </div>
+    <div class='selector options'>
+      <h2>Options</h2>
+      <div class='fdr'>
+        <strong>FDR threshold</strong>
+        <div id='fdrSlider'></div>
+        <input class="fdr-fld" type="text" value="0.01" />
+      </div>
+      <div class='fc'>
+        <strong>log FC threshold</strong>
+        <div id='fcSlider'></div>
+        <input class="fc-fld" type="text" value="0" />
+      </div>
+      <div class='proportional'>
+        <label>
+          <input type="checkbox"> EXPERIMENTAL : Proportional Diagram
+        </label>
+      </div>
+    </div>
+  </div>
+  <div id='overlaps' class='tabbable'>
+    <ul class="nav">
+      <li data-target='venn-table'><a href="#">Table</a></li>
+      <li data-target='venn'><a href="#">Venn</a></li>
+    </ul>
+    <div id='venn-table'>
+    </div>
+    <div id='venn'>
+      <div id='not-supported'>
+        <p>This Venn Diagram only support up to 4 classes.
+          <p>Use the 'Proportional Diagram' or the 'Table' tab above
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <h2>Gene List <span id='gene-list-name'></span></h2>
+    <div id='gene-list-desc'>
+    </div>
+    <a id='csv-download' href='#'>Download CSV</a> 
+    <div id='gene-table-info'>
+    </div>
+    <div id='gene-table'>
+    </div>
+  </div>    
+</div>

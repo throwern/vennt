@@ -8,10 +8,21 @@ info_columns = null
 csv_file     = null
 csv_data     = null
 show_tour    = null
+renderTo     = null
+renderFormat = null
+link         = null
+link_column  = null
+link_id_column=null
 
 g_fdr_cutoff = 0.01
 g_fc_cutoff  = 0
 
+truncate = (text, limit, ending = '...') ->
+  if text.length > limit
+    return text.substring(0, limit - ending.length) + ending;  
+  else
+    return text
+  
 read_settings = () ->
     window.venn_settings ?= {}
     key_column   = venn_settings.key_column   || 'key'
@@ -22,7 +33,12 @@ read_settings = () ->
     csv_file     = venn_settings.csv_file     || 'data.csv'
     csv_data     = venn_settings.csv_data
     show_tour    = if venn_settings.show_tour? then venn_settings.show_tour else true
-
+    renderTo     = venn_settings.renderTo     || 'body'
+    renderFormat = venn_settings.renderFormat || 'full'
+    link         = venn_settings.link         || false
+    link_column  = venn_settings.link_column  || false
+    link_id_column  = venn_settings.link_id_column || false
+    
 is_signif = (item) ->
     !(item[fdrCol] > g_fdr_cutoff || Math.abs(item[logFCcol])<g_fc_cutoff)
 
@@ -214,7 +230,10 @@ class Overlaps
         )
 
         desc = []
-        cols = info_columns.map((c) => @gene_table.mk_column(c, c, ''))
+        cols = info_columns.map((c) => 
+          format = (link && c==link_column) ? 'Link' : ''
+          @gene_table.mk_column(c, c, format)
+        )
         i=0
         for s in set
             signif = k[i]=='1'
@@ -262,7 +281,7 @@ class Data
 
             d = (@data[r[id_column]] ?= {})
             r.id ?= r[id_column]   # Needed by slickgrid
-
+            r.link_id ?= r[link_id_column]
             # Make number columns actual numbers
             for num_col in [fdrCol, logFCcol]
                 if !is_number(r[num_col])
@@ -380,13 +399,15 @@ class GeneTable
         ret.cssClasses += if is_signif(item) then 'sig' else 'nosig'
         ret
 
-    _get_formatter: (type, val) ->
+    _get_formatter: (type, val, row) ->
         switch type
             when 'logFC'
                 cl = if (val >= 0) then "pos" else "neg"
                 "<div class='#{cl}'>#{val.toFixed(2)}</div>"
             when 'FDR'
                 if val<0.01 then val.toExponential(2) else val.toFixed(2)
+            when 'Link'
+                '<a href="' + link + '/' + row['link_id'] + '" target="_blank">' + val + '</a>'
             else
                 val
 
@@ -409,8 +430,10 @@ class GeneTable
             field: fld
             name: name
             sortable: true
-            formatter: (i,c,val,m,row) => @_get_formatter(type, val)
+            formatter: (i,c,val,m,row) => @_get_formatter(type, val, row)
             sortFunc: @_get_sort_func(type, fld)
+        if fld == 'Definition'
+          o.width = 500
         $.extend(o, opts)
 
     _sorter: (args) ->
@@ -466,7 +489,7 @@ class SelectorTable
         span = (clazz) -> "<span class='selectable #{clazz}'></span>"
         for name in @data.keys
             do (name) =>
-                li = $("<li class='#{name}'><a class='file' href='#'>#{name}</a>"+
+                li = $("<li class='#{name}'><a class='file' href='#'>#{truncate($.trim(name),25)}</a>"+
                        span("total")+span("up")+span("down"))
                 $('a',li).click(() => @selected(name))
                 $(elem).append(li)
@@ -478,7 +501,12 @@ class SelectorTable
     selected: (name) ->
         rows = @data.get_data_for_key(name)
 
-        columns = info_columns.map((c) => @gene_table.mk_column(c, c, ''))
+        columns = info_columns.map((c) => 
+          format = ''
+          if link && c==link_column
+            format = 'Link'
+          @gene_table.mk_column(c, c, format)
+        )
         columns.push(@gene_table.mk_column(logFCcol, logFCcol, 'logFC'),
                      @gene_table.mk_column(fdrCol, fdrCol, 'FDR'))
         @gene_table.set_data(rows, columns)
@@ -518,11 +546,16 @@ class DGEVenn
             d3.csv(csv_file, (rows) => @_data_ready(rows))
 
     _show_page: () ->
-        about = $(require("./templates/about.hbs")(vennt_version: vennt_version))
-        body = $(require("./templates/body.hbs")())
-        $('body').append(body)
-        $('#about-modal').replaceWith(about)
-        $('#wrap > .container').show()
+        if renderFormat=='simple'
+            body = $(require("./templates/simple-body.hbs")())
+            $(renderTo).append(body)
+            $('vennt.container').show()
+        else
+            about = $(require("./templates/about.hbs")(vennt_version: vennt_version))
+            body = $(require("./templates/body.hbs")())
+            $(renderTo).append(body)
+            $('#about-modal').replaceWith(about)
+            $('#wrap > .container').show()
         $('#loading').hide()
 
         # Now the page exists!  Do some configuration
