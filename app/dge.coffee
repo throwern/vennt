@@ -224,14 +224,16 @@ class Overlaps
                     if !row.id
                         row.id = rowSet[s.name][id_column]
                         info_columns.map((c) -> row[c] = rowSet[s.name][c])
-
+                        row.link_id = rowSet[s.name][link_id_column]
                     row.push rowSet[s.name][logFCcol]
                 rows.push(row)
         )
 
         desc = []
         cols = info_columns.map((c) => 
-          format = (link && c==link_column) ? 'Link' : ''
+          format = ''
+          if link && c==link_column
+            format = 'Link'
           @gene_table.mk_column(c, c, format)
         )
         i=0
